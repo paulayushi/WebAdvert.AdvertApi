@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AutoMapper;
 using AdvertAPI.Services;
+using AdvertAPI.Health;
 
 namespace AdvertAPI
 {
@@ -28,6 +29,10 @@ namespace AdvertAPI
         {
             services.AddAutoMapper();
             services.AddTransient<IAdvertServiceStore, AdvertServiceStore>();
+            services.AddHealthChecks();
+            services.AddHealthChecks(checks => {
+                checks.AddCheck<StorageHealthCheck>("DynamoDBHealth", new TimeSpan(0, 1, 0));
+            });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
@@ -39,6 +44,7 @@ namespace AdvertAPI
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseHealthChecks("/Health");
             app.UseMvc();
         }
     }
