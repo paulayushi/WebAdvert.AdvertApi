@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace AdvertAPI.Services
 {
-    interface IAdvertServiceStore
+    public interface IAdvertServiceStore
     {
         Task<string> Add(AdvertModel model);
         Task Confirm(AdvertConfirmModel model);
         Task<bool> CheckHealthAsync();
+        Task<AdvertDynamoDBModel> GetById(string id);
+        Task<List<AdvertModel>> GetAll();
     }
 }

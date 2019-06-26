@@ -12,7 +12,7 @@ namespace AdvertAPI.Health
     {
         private readonly IAdvertServiceStore _advertServiceStore;
 
-        StorageHealthCheck(IAdvertServiceStore advertServiceStore)
+        public StorageHealthCheck(IAdvertServiceStore advertServiceStore)
         {
             _advertServiceStore = advertServiceStore;
         }

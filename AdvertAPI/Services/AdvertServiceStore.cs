@@ -18,11 +18,11 @@ namespace AdvertAPI.Services
         public async Task<string> Add(AdvertModel model)
         {
             var dynamoDbModel = _mapper.Map<AdvertDynamoDBModel>(model);
-            dynamoDbModel.Id = new Guid().ToString();
+            dynamoDbModel.Id = Guid.NewGuid().ToString();
             dynamoDbModel.CreationDate = DateTime.Now;
             dynamoDbModel.Status = AdvertStatus.Pending;
 
-            using (var _client = new AmazonDynamoDBClient())
+            using (var _client = new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1))
             {
                 using(var _context = new DynamoDBContext(_client))
                 {
@@ -34,7 +34,7 @@ namespace AdvertAPI.Services
 
         public async Task<bool> CheckHealthAsync()
         {
-            using (var _client = new AmazonDynamoDBClient())
+            using (var _client = new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1))
             {
                 var dbHealth = await _client.DescribeTableAsync("Advert");
                 return dbHealth.Table.TableStatus.ToString().ToLower() == "active";
@@ -43,7 +43,7 @@ namespace AdvertAPI.Services
 
         public async Task Confirm(AdvertConfirmModel model)
         {
-            using(var _client = new AmazonDynamoDBClient())
+            using(var _client = new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1))
             {
                 using(var _context = new DynamoDBContext(_client))
                 {
@@ -55,6 +55,7 @@ namespace AdvertAPI.Services
                     if(model.Status == AdvertStatus.Active)
                     {
                         advert.Status = AdvertStatus.Active;
+                        await _context.SaveAsync(advert);
                     }
                     else
                     {
@@ -62,6 +63,32 @@ namespace AdvertAPI.Services
                     }
                 }
             }
+        }
+
+        public async Task<List<AdvertModel>> GetAll()
+        {
+            using(var client = new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1))
+            {
+                using(var context = new DynamoDBContext(client))
+                {
+                    var scanResult = await context.ScanAsync<AdvertDynamoDBModel>(new List<ScanCondition>()).GetNextSetAsync();
+
+                    return scanResult.Select(item => _mapper.Map<AdvertModel>(item)).ToList();
+                }
+            }
+        }
+
+        public async Task<AdvertDynamoDBModel> GetById(string id)
+        {
+            var dbContext = new AdvertDynamoDBModel();
+            using (var client = new AmazonDynamoDBClient(Amazon.RegionEndpoint.USEast1))
+            {
+                using(var context = new DynamoDBContext(client))
+                {
+                    dbContext = await context.LoadAsync<AdvertDynamoDBModel>(id);
+                }
+            }
+            return dbContext;
         }
     }
 }
